@@ -25,7 +25,7 @@ Demo repo for processing GitHub webhook events with the ELK stack (Elasticsearch
 
 ### Option 2: Logstash Only
 
-If you already have Elasticsearch and Kibana running:
+If you already have Elasticsearch and Kibana running or just want to output to the console. For the latter, out comment the elasticsearch output.
 
 1. **Clone and start Logstash:**
    ```bash

@@ -4,8 +4,11 @@ A comprehensive Logstash configuration for processing GitHub.com webhook payload
 
 ## Features
 
+- **Complete ELK Stack**: Full Elasticsearch, Logstash, and Kibana setup for GitHub webhook analytics
 - **HTTP Input**: Receives webhook payloads on port 8080
+- **Dual Format Support**: Handles both JSON and form-encoded webhook payloads
 - **Event Processing**: Parses and enriches all GitHub webhook event types
+- **Smart Event Detection**: Automatically detects event types from payload content
 - **Common Fields**: Extracts repository, sender, and organization information
 - **Event-Specific Parsing**: Handles specific fields for different webhook types:
   - Push events (commits, refs, branches)
@@ -15,7 +18,9 @@ A comprehensive Logstash configuration for processing GitHub.com webhook payload
   - Repository events (created, deleted, etc.)
   - Star/Watch/Fork events
   - Create/Delete events (branches, tags)
-- **Flexible Output**: Configurable outputs to Elasticsearch, files, or stdout
+- **Elasticsearch Integration**: Stores data in time-based indices for efficient querying
+- **Kibana Dashboards**: Pre-configured visualizations and search capabilities
+- **Docker Compose**: One-command deployment of the entire stack
 
 ## Supported Webhook Events
 
@@ -40,10 +45,45 @@ This configuration processes all GitHub webhook events including:
 
 ### Prerequisites
 
-- Logstash 7.x or 8.x
-- Java 8 or higher
+- Docker and Docker Compose (recommended)
+- OR: Logstash 8.x, Elasticsearch 8.x, Kibana 8.x
+- Java 11 or higher
 
-### Running the Configuration
+### Option 1: Complete ELK Stack with Docker Compose (Recommended)
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/jnus/ghec-logstash.git
+   cd ghec-logstash
+   ```
+
+2. Start the complete ELK stack:
+   ```bash
+   ./start-elk.sh
+   ```
+
+3. Wait for all services to be ready, then set up Kibana:
+   ```bash
+   ./setup-kibana.sh
+   ```
+
+4. Access the services:
+   - **Logstash webhook endpoint**: http://localhost:8080/webhook
+   - **Elasticsearch**: http://localhost:9200
+   - **Kibana**: http://localhost:5601
+
+5. Configure your GitHub repository webhooks to send to:
+   ```
+   http://your-server-ip:8080/webhook
+   ```
+
+### Option 2: Logstash Only
+
+If you already have Elasticsearch and Kibana running:
+
+### Option 2: Logstash Only
+
+If you already have Elasticsearch and Kibana running:
 
 1. Clone this repository:
    ```bash
@@ -58,36 +98,130 @@ This configuration processes all GitHub webhook events including:
 
 3. Configure your GitHub repository webhooks to send to:
    ```
-   http://your-logstash-host:8080
+   http://your-logstash-host:8080/webhook
    ```
 
 ### Docker Usage
 
-You can also run this configuration using Docker:
+You can also run individual components using Docker:
+
+You can also run individual components using Docker:
 
 ```bash
-# Create a simple Dockerfile
-cat > Dockerfile << EOF
-FROM docker.elastic.co/logstash/logstash:8.11.0
-COPY logstash.conf /usr/share/logstash/pipeline/
-EOF
-
-# Build and run
+# Build and run Logstash only
 docker build -t ghec-logstash .
 docker run -p 8080:8080 ghec-logstash
 ```
 
+## ELK Stack Components
+
+### Elasticsearch
+Elasticsearch stores and indexes all GitHub webhook data in daily indices with the pattern `github-webhooks-YYYY.MM.dd`. Each webhook event becomes a document with structured fields for easy searching and aggregation.
+
+**Key features:**
+- Time-based indexing for efficient data management
+- Full-text search across all webhook data
+- Powerful aggregations for analytics
+- RESTful API for custom queries
+
+**Example queries:**
+```bash
+# Get all push events from today
+curl "localhost:9200/github-webhooks-*/_search" -H "Content-Type: application/json" -d '{
+  "query": {"term": {"event_type": "push"}},
+  "sort": [{"@timestamp": {"order": "desc"}}]
+}'
+
+# Count events by repository
+curl "localhost:9200/github-webhooks-*/_search" -H "Content-Type: application/json" -d '{
+  "size": 0,
+  "aggs": {
+    "repositories": {
+      "terms": {"field": "repo_full_name.keyword", "size": 10}
+    }
+  }
+}'
+```
+
+### Logstash
+Logstash processes incoming GitHub webhooks and transforms them into structured documents for Elasticsearch.
+
+**Processing pipeline:**
+1. **Input**: HTTP plugin receives webhooks on port 8080
+2. **Filter**: Parses JSON/form-encoded payloads and extracts fields
+3. **Enhancement**: Adds event metadata and infers event types
+4. **Output**: Sends structured data to Elasticsearch
+
+### Kibana
+Kibana provides a web interface for visualizing and exploring your GitHub webhook data.
+
+**Access**: http://localhost:5601
+
+**Pre-configured features:**
+- Index pattern: `github-webhooks-*` with `@timestamp` as time field
+- Discover view for exploring webhook events
+- Ready for custom dashboards and visualizations
+
+**Useful Kibana queries:**
+- `event_type:push` - Show only push events
+- `repo_name:"your-repo-name"` - Filter by repository
+- `sender_login:"username"` - Filter by user
+- `action:"opened" AND event_type:"pull_request"` - New pull requests
+
+**Sample dashboard widgets:**
+- Events over time (timeline)
+- Top repositories by activity
+- Event types distribution
+- Most active contributors
+- Pull request states
+- Issue creation trends
+
 ## Configuration
+
+### ELK Stack Configuration
+
+The Docker Compose setup includes:
+
+```yaml
+# Services Overview
+- Elasticsearch: Data storage and search engine (port 9200)
+- Logstash: Data processing pipeline (port 8080)
+- Kibana: Visualization and exploration (port 5601)
+```
+
+**Elasticsearch configuration:**
+- Memory: 1GB heap size (configurable via ES_JAVA_OPTS)
+- Storage: Persistent volume for data retention
+- Network: Internal cluster communication
+
+**Logstash configuration:**
+- Input: HTTP on port 8080 accepting JSON and form-encoded payloads
+- Processing: Event type detection, field extraction, data enrichment
+- Output: Elasticsearch with daily index rotation
+
+**Kibana configuration:**
+- Automatic Elasticsearch connection
+- Pre-configured index patterns
+- Ready for dashboard creation
 
 ### Output Configuration
 
-The default configuration outputs to stdout for debugging. For production use, uncomment and configure the Elasticsearch output:
+The default configuration outputs to Elasticsearch. The configuration automatically:
+- Creates daily indices: `github-webhooks-YYYY.MM.dd`
+- Maps common GitHub webhook fields
+- Preserves original payload data
+- Adds processing metadata
+
+For custom Elasticsearch configurations, modify the output section in `logstash.conf`:
 
 ```ruby
 elasticsearch {
   hosts => ["your-elasticsearch-host:9200"]
   index => "github-webhooks-%{+YYYY.MM.dd}"
   template_name => "github-webhooks"
+  # Add authentication if needed
+  # user => "elastic"
+  # password => "your-password"
 }
 ```
 
@@ -136,23 +270,162 @@ The configuration extracts and adds the following fields to each event:
 
 ## Testing
 
-You can test the configuration using curl:
+### Test the Complete Pipeline
+
+1. **Send a test webhook:**
+   ```bash
+   curl -X POST http://localhost:8080/webhook \
+     -H "Content-Type: application/json" \
+     -H "X-GitHub-Event: push" \
+     -H "X-GitHub-Delivery: test-12345" \
+     -d '{
+       "repository": {"name": "test-repo", "full_name": "user/test-repo"},
+       "commits": [{"message": "Test commit"}],
+       "after": "abc123",
+       "before": "def456",
+       "ref": "refs/heads/main",
+       "sender": {"login": "testuser"}
+     }'
+   ```
+
+2. **Verify in Elasticsearch:**
+   ```bash
+   curl "http://localhost:9200/github-webhooks-*/_search?pretty&sort=@timestamp:desc&size=1"
+   ```
+
+3. **View in Kibana:**
+   - Open http://localhost:5601
+   - Go to Analytics > Discover
+   - Select the `github-webhooks-*` index pattern
+   - View your webhook data
+
+### Use the Test Scripts
+
+The repository includes several test scripts:
 
 ```bash
-curl -X POST http://localhost:8080 \
-  -H "Content-Type: application/json" \
-  -H "X-GitHub-Event: push" \
-  -H "X-GitHub-Delivery: 12345-67890" \
-  -d @example-webhook.json
+# Validate Logstash configuration
+./validate-config.sh
+
+# Test webhook processing
+./test-webhook.sh
+
+# Test external connectivity (for port forwarding)
+./test-external-access.sh
 ```
 
 ## Monitoring
 
-Monitor your Logstash instance for:
-- Input event rates
-- Processing errors
-- Output delivery success
-- Resource utilization
+### ELK Stack Monitoring
+
+Monitor your complete stack:
+
+**Elasticsearch:**
+```bash
+# Cluster health
+curl "localhost:9200/_cluster/health?pretty"
+
+# Index statistics
+curl "localhost:9200/_cat/indices?v"
+
+# Document count by index
+curl "localhost:9200/github-webhooks-*/_count"
+```
+
+**Logstash:**
+```bash
+# Check container status
+docker compose ps
+
+# View processing logs
+docker logs ghec-logstash --follow
+
+# Check input statistics
+curl "localhost:9600/_node/stats/pipeline"
+```
+
+**Kibana:**
+- Access monitoring via Stack Monitoring in Kibana
+- View processing rates and errors
+- Monitor index patterns and field mappings
+
+### Key Metrics to Monitor
+
+- **Input event rates**: Webhooks received per minute
+- **Processing errors**: JSON parse failures, missing fields
+- **Output delivery success**: Elasticsearch indexing success rate
+- **Resource utilization**: CPU, memory, disk usage
+- **Index size growth**: Elasticsearch storage consumption
+- **Response times**: Webhook processing latency
+
+### Alerts and Notifications
+
+Consider setting up alerts for:
+- High error rates in Logstash processing
+- Elasticsearch cluster health issues
+- Unusual webhook traffic patterns
+- Storage space warnings
+
+## Production Deployment
+
+### Scaling Considerations
+
+**Horizontal Scaling:**
+- Multiple Logstash instances behind a load balancer
+- Elasticsearch cluster with multiple nodes
+- Separate Kibana instances for high availability
+
+**Performance Tuning:**
+```yaml
+# docker-compose.yml adjustments for production
+elasticsearch:
+  environment:
+    - ES_JAVA_OPTS=-Xms2g -Xmx2g  # Increase heap size
+    - discovery.type=single-node  # Remove for cluster setup
+
+logstash:
+  environment:
+    - LS_JAVA_OPTS=-Xms1g -Xmx1g  # Increase heap size
+    - PIPELINE_WORKERS=4          # Increase workers
+```
+
+**Index Management:**
+- Set up Index Lifecycle Management (ILM) policies
+- Configure index templates for field mappings
+- Implement retention policies for old data
+
+### Security Best Practices
+
+1. **Enable HTTPS**: Use a reverse proxy (nginx, traefik) for SSL termination
+2. **Webhook Signatures**: Implement GitHub signature verification
+3. **Authentication**: Enable Elasticsearch security features
+4. **Network Security**: Use VPCs, security groups, firewalls
+5. **Access Control**: Implement role-based access for Kibana
+
+### High Availability Setup
+
+```yaml
+# Example HA configuration
+version: '3.8'
+services:
+  elasticsearch-1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - node.name=es-node-1
+      - cluster.name=github-webhooks
+      - discovery.seed_hosts=elasticsearch-2,elasticsearch-3
+  
+  logstash-1:
+    image: ghec-logstash
+    environment:
+      - PIPELINE_WORKERS=8
+  
+  nginx:
+    image: nginx
+    ports:
+      - "443:443"
+    # SSL termination and load balancing
+```
 
 ## Contributing
 

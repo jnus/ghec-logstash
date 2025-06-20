@@ -1,0 +1,128 @@
+{
+  "ref": "refs/heads/main",
+  "before": "0000000000000000000000000000000000000000",
+  "after": "1234567890abcdef1234567890abcdef12345678",
+  "repository": {
+    "id": 123456789,
+    "node_id": "MDEwOlJlcG9zaXRvcnkxMjM0NTY3ODk=",
+    "name": "example-repo",
+    "full_name": "octocat/example-repo",
+    "private": false,
+    "owner": {
+      "login": "octocat",
+      "id": 1,
+      "node_id": "MDQ6VXNlcjE=",
+      "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/octocat",
+      "html_url": "https://github.com/octocat",
+      "type": "User",
+      "site_admin": false
+    },
+    "html_url": "https://github.com/octocat/example-repo",
+    "description": "This is an example repository",
+    "fork": false,
+    "url": "https://api.github.com/repos/octocat/example-repo",
+    "created_at": "2023-01-01T00:00:00Z",
+    "updated_at": "2023-12-01T00:00:00Z",
+    "pushed_at": "2023-12-01T12:00:00Z",
+    "git_url": "git://github.com/octocat/example-repo.git",
+    "ssh_url": "git@github.com:octocat/example-repo.git",
+    "clone_url": "https://github.com/octocat/example-repo.git",
+    "size": 108,
+    "stargazers_count": 80,
+    "watchers_count": 9,
+    "language": "JavaScript",
+    "has_issues": true,
+    "has_projects": true,
+    "has_wiki": true,
+    "has_pages": false,
+    "forks_count": 9,
+    "archived": false,
+    "disabled": false,
+    "open_issues_count": 0,
+    "license": {
+      "key": "mit",
+      "name": "MIT License",
+      "spdx_id": "MIT",
+      "url": "https://api.github.com/licenses/mit",
+      "node_id": "MDc6TGljZW5zZTEz"
+    },
+    "forks": 9,
+    "open_issues": 0,
+    "watchers": 80,
+    "default_branch": "main"
+  },
+  "pusher": {
+    "name": "octocat",
+    "email": "octocat@github.com"
+  },
+  "sender": {
+    "login": "octocat",
+    "id": 1,
+    "node_id": "MDQ6VXNlcjE=",
+    "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/octocat",
+    "html_url": "https://github.com/octocat",
+    "type": "User",
+    "site_admin": false
+  },
+  "created": false,
+  "deleted": false,
+  "forced": false,
+  "base_ref": null,
+  "compare": "https://github.com/octocat/example-repo/compare/000000000000...1234567890ab",
+  "commits": [
+    {
+      "id": "1234567890abcdef1234567890abcdef12345678",
+      "tree_id": "abcdef1234567890abcdef1234567890abcdef12",
+      "distinct": true,
+      "message": "Add new feature",
+      "timestamp": "2023-12-01T12:00:00Z",
+      "url": "https://github.com/octocat/example-repo/commit/1234567890abcdef1234567890abcdef12345678",
+      "author": {
+        "name": "Octocat",
+        "email": "octocat@github.com",
+        "username": "octocat"
+      },
+      "committer": {
+        "name": "Octocat",
+        "email": "octocat@github.com",
+        "username": "octocat"
+      },
+      "added": [
+        "new-feature.js"
+      ],
+      "removed": [],
+      "modified": [
+        "README.md"
+      ]
+    }
+  ],
+  "head_commit": {
+    "id": "1234567890abcdef1234567890abcdef12345678",
+    "tree_id": "abcdef1234567890abcdef1234567890abcdef12",
+    "distinct": true,
+    "message": "Add new feature",
+    "timestamp": "2023-12-01T12:00:00Z",
+    "url": "https://github.com/octocat/example-repo/commit/1234567890abcdef1234567890abcdef12345678",
+    "author": {
+      "name": "Octocat",
+      "email": "octocat@github.com",
+      "username": "octocat"
+    },
+    "committer": {
+      "name": "Octocat",
+      "email": "octocat@github.com",
+      "username": "octocat"
+    },
+    "added": [
+      "new-feature.js"
+    ],
+    "removed": [],
+    "modified": [
+      "README.md"
+    ]
+  }
+}
